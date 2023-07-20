@@ -1,0 +1,43 @@
+Approach Taken:
+
+To build the real-time data pipeline, I followed the specified requirements and used the recommended tools and technologies. It involves the following steps:
+
+Data Ingestion from Kafka: I had set up a Kafka consumer to subscribe to the clickstream data topics and fetch the incoming data.
+
+Data Storage in Oracle Database: I utilized Oracle Database as the data store to store the ingested data with the specified schema. Created tables and columns as per the defined schema to store the relevant information for each click event.
+
+Data Processing with Apache Spark: I periodically processed  the stored clickstream data using Apache Spark. Aggregated the data by URL and country, and calculated the number of clicks, unique users, and average time spent on each URL by users from each country.
+
+Data Indexing with Elasticsearch: I indexed the processed data in Elasticsearch .
+
+Assumptions Made:
+
+Kafka is already set up, and the web application is ready to publish clickstream data to Kafka topics.
+
+Oracle Database is properly installed and configured to handle the incoming clickstream data.
+
+IP address to geo-location mapping is done separately before ingesting data into Oracle.
+
+The data pipeline will run on a distributed cluster to ensure scalability and performance.
+
+
+Data Pipeline Implementation:
+
+Data Ingestion from Kafka:
+Implement a Kafka consumer to subscribe to the relevant Kafka topics and fetch the clickstream data.
+Process the incoming data and extract the required information like user ID, timestamp, URL, country, city, user agent, etc.
+
+Data Storage in Oracle Database:
+Use Oracle's JDBC driver to connect to the Oracle Database and create tables to store the clickstream data.
+Define the schema with row key as a unique identifier for each click event and columns.
+Insert the processed data into the Oracle tables.
+
+Periodic Data Processing with Apache Spark:
+Schedule periodic Spark jobs to process the data stored in Oracle Database.
+Load the data from Oracle into Spark DataFrame.
+Perform the required aggregations by URL and country, calculating the number of clicks, unique users, and average time spent on each URL by users from each country.
+
+Data Indexing with Elasticsearch:
+Establish a connection to Elasticsearch.
+Transform the processed data into the appropriate format for indexing in Elasticsearch.
+Index the data in Elasticsearch.
