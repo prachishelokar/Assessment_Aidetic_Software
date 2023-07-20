@@ -1,0 +1,87 @@
+# Import statements for Kafka and Oracle
+from kafka import KafkaConsumer
+import cx_Oracle
+
+# Kafka configuration 
+consumer = KafkaConsumer('clickstream_topic', bootstrap_servers='localhost:9092')
+
+# Process and store data from Kafka
+for message in consumer:
+    data = message.value
+  
+# Extract relevant information from the data (user ID, timestamp, URL, etc.)
+    row_key = data['row_key']
+    user_id = data['user_id']
+    timestamp = data['timestamp']
+    url = data['url']
+    country = data['country']
+    city = data['city']
+    browser = data['browser']
+    os = data['os']
+    device = data['device']
+
+# Oracle Database configuration
+oracle_connection = cx_Oracle.connect('username/password@host:port/servicename')
+cursor = oracle_connection.cursor()
+
+# Create tables with appropriate schema
+create_table_query = """
+    CREATE TABLE clickstream_data (
+        row_key NUMBER PRIMARY KEY,
+        user_id VARCHAR2(50),
+        timestamp TIMESTAMP,
+        url VARCHAR2(100),
+        country VARCHAR2(50),
+        city VARCHAR2(50),
+        browser VARCHAR2(50),
+        os VARCHAR2(50),
+        device VARCHAR2(50)
+    )
+"""
+
+# Execute the query to create the table
+
+cursor.execute(create_table_query)
+    
+
+   # Store the data in Oracle database
+    insert_query = f"INSERT INTO clickstream_data VALUES ({row_key}, '{user_id}', '{timestamp}', '{url}', '{country}', '{city}', '{browser}', '{os}', '{device}')"
+    cursor.execute(insert_query)
+    oracle_connection.commit()
+    oracle_connection.close()
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import *
+
+# Create a Spark session
+spark = SparkSession.builder \
+    .appName("ClickstreamDataProcessing") \
+    .getOrCreate()
+
+# Load data from Oracle into a DataFrame
+df = spark.read \
+    .format("jdbc") \
+    .option("url", "jdbc:oracle:thin:@//host:port/servicename") \
+    .option("dbtable", "clickstream_data") \
+    .option("user", "username") \
+    .option("password", "password") \
+    .load()
+
+# Perform aggregations by URL and country
+aggregated_df = df.groupBy("url", "country") \
+    .agg(
+        countDistinct("user_id").alias("unique_users"),
+        countDistinct("row_key").alias("number_of_clicks"),
+        avg("timestamp").alias("average_time_spent")
+    )
+
+# Write the aggregated data to Elasticsearch
+aggregated_df.write \
+    .format("org.elasticsearch.spark.sql") \
+    .option("es.nodes", "localhost") \
+    .option("es.port", "9200") \
+    .option("es.resource", "clickstream_aggregated_data") \
+    .save()
+
+# Stop the Spark session
+spark.stop()
